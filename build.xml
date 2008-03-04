@@ -1,0 +1,71 @@
+<project name="RackInterface" default="compile" basedir=".">
+  <property file="build.properties"/>
+  <property file="${user.home}/build.properties"/>
+  <property name="app.name"      value="RackInterface"/>
+  <property name="app.version"   value="0.1"/>
+  <property name="build.home"    value="${basedir}/build"/>
+  <property name="dist.home"     value="${basedir}/dist"/>
+  <property name="src.home"      value="${basedir}/src"/>
+  <property name="lib.dir"       value="${basedir}/lib"/>
+  <property name="build-lib.dir" value="${basedir}/build-lib"/>
+  <property name="compile.debug"       value="true"/>
+  <property name="compile.deprecation" value="false"/>
+  <property name="compile.optimize"    value="true"/>
+
+  <path id="compile.classpath">
+    <fileset dir="${lib.dir}">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="${build-lib.dir}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="all" depends="clean,compile" description="Clean build and dist directories, then compile"/>
+
+  <target name="clean" description="Delete old build and dist directories">
+    <delete dir="${build.home}"/>
+    <delete dir="${dist.home}"/>
+  </target>
+
+  <target name="compile" depends="prepare" description="Compile Java sources">
+
+    <!-- Compile Java classes as necessary -->
+    <javac srcdir="${src.home}"
+          destdir="${build.home}"
+            debug="${compile.debug}"
+      deprecation="${compile.deprecation}"
+         optimize="${compile.optimize}">
+        <classpath refid="compile.classpath"/>
+    </javac>
+
+    <!-- Copy application resources -->
+    <copy  todir="${build.home}">
+      <fileset dir="${src.home}" excludes="**/*.java"/>
+    </copy>
+  </target>
+
+  <target name="dist" depends="compile,javadoc" description="Create binary distribution">
+    <!-- Create application JAR file -->
+    <jar jarfile="${dist.home}/${app.name}-${app.version}.jar" basedir="${build.home}"/>
+  </target>
+
+
+  <target name="javadoc" depends="compile" description="Create Javadoc API documentation">
+
+    <mkdir          dir="${dist.home}/docs/api"/>
+    <javadoc sourcepath="${src.home}"
+                destdir="${dist.home}/docs/api"
+           packagenames="*">
+      <classpath refid="compile.classpath"/>
+    </javadoc>
+
+  </target>
+
+  <target name="prepare">
+    <!-- Create build directories as needed -->
+    <mkdir  dir="${build.home}"/>
+    <mkdir dir="${dist.home}"/>
+  </target>
+	
+</project>

@@ -1,0 +1,77 @@
+Rack Interface Filter is a simple filter that can be deployed to a servlet container. On startup, the filter 
+instantiates a JRuby instance, bootstraps a ruby web framework, then instantiates a rack adaptor for that framework.
+When an request comes in, the filter translates the request to a RubyHash and passes it to the rack adaptor's call method.
+
+This is very much a work in progress, and the only framework with which it has been used is Merb. There is currently no
+support for bundling up a ruby web application as a war file, though it shouldn't be hard to add.
+
+To test this with a merb application, add a WEB-INF directory to the public directory:
+
+/MerbApp
+  /app
+  /config
+  /public
+    /WEB-INF
+      /classes
+      /lib
+        bsf.jar
+        commons-logging-1.x.jar
+        jruby.jar        
+        RackInterface-0.x.jar
+      web.xml
+  Rakefile
+  /spec
+
+
+Sample web.xml:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "http://java.sun.com/dtd/web-app_2_3.dtd">
+<web-app>
+    <display-name>Rack Test</display-name>
+
+    <distributable/>
+    
+    <filter>
+    	<filter-name>RackInterface</filter-name>
+    	<filter-class>com.zumisoft.rack.RackFilter</filter-class>
+      <init-param>
+        <param-name>framework</param-name>
+        <param-value>merb</param-value>
+      </init-param>
+  	</filter>
+  
+  	<filter-mapping>
+    	<filter-name>RackInterface</filter-name>
+    	<url-pattern>/*</url-pattern>
+  	</filter-mapping>
+        
+    <session-config>
+      <session-timeout>30</session-timeout> 
+    </session-config>
+</web-app>
+
+
+To test this with tomcat, create the file
+
+$CATALINA_HOME/conf/Catalina/localhost/ROOT.xml:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Context docBase="/path/to/merb/app/public" path="" />
+
+
+From here, you should have the merb app deployed to the root of the server (though it should be possible to map it to 
+some other url).
+
+Start up tomcat, and try to hit the app.
+
+The placement of WEB-INF, the general assumptions about directory layouts, and war packaging are all fluctuating at the moment. This layout seemed like the quickest way to get a test with Merb running.
+
+There are a few issues already. For one, sometimes the rack adaptor is returning a <File> object as the third element
+in the response tuple. I'm not sure what to do about that yet. If strings are returned, everything works. As a workaround
+for that, you can specify ignore paths ("/images", "/stylesheets", "/javascript", "/favicon.ico" by default). If a reuest
+is made for a url that starts with an ignore path, it's passed to the servlet container's default servlet. Right now, this is just passing through requests for static content. My guess is that the default servlet is better at handling static content anyway,
+but this behavior might have to change. You could also use the ignore path to allow requests to flow through to other servlets or
+filters to stack ruby web apps or regular java servlets.
+
+As a disclaimer, I clearly have no idea what I'm doing. Any help or suggestions would be great.
